@@ -1,0 +1,2509 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Completo - Materiais de Limpeza SMS</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Firebase App (obrigatório) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <!-- Firebase Firestore -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <!-- Firebase Auth (para autenticação) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a5276;
+            --primary-dark: #13405c;
+            --primary-light: #2e86c1;
+            --secondary: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --success-light: #d4edda;
+            --success-dark: #155724;
+            --info-light: #cce7ff;
+            --info-dark: #004085;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            min-height: 100vh;
+            color: var(--dark);
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(to right, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 1.5rem 2rem;
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .logo {
+            font-size: 2.5rem;
+        }
+        
+        .header-text h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .dashboard {
+            background: white;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .tabs {
+            display: flex;
+            background: var(--light);
+            border-bottom: 1px solid var(--light-gray);
+            overflow-x: auto;
+        }
+        
+        .tab {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .tab.active {
+            border-bottom: 3px solid var(--primary);
+            color: var(--primary);
+            background: white;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 2rem;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: var(--light);
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-left: 4px solid var(--primary);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card h3 {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            height: 300px;
+            transition: transform 0.3s ease;
+        }
+        
+        .chart-container:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .table-container {
+            margin-top: 2rem;
+            overflow-x: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        th {
+            background: var(--primary);
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+        
+        tr:hover {
+            background: rgba(26, 82, 118, 0.05);
+        }
+        
+        .status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .ok { background: var(--success-light); color: var(--success-dark); }
+        .warning { background: #fff3cd; color: #856404; }
+        .danger { background: #f8d7da; color: #721c24; }
+        
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        select, button, input {
+            padding: 0.7rem 1rem;
+            border: 1px solid var(--light-gray);
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        
+        select, input {
+            background: white;
+            min-width: 200px;
+        }
+        
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.3s ease;
+        }
+        
+        button:hover {
+            background: var(--primary-dark);
+        }
+        
+        .unit-details {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 2rem;
+        }
+        
+        .units-list {
+            background: var(--light);
+            border-radius: 8px;
+            padding: 1.5rem;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .unit-item {
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .unit-item:hover {
+            background: #e9ecef;
+        }
+        
+        .unit-item.active {
+            background: var(--primary-light);
+            color: white;
+        }
+        
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .product-card {
+            background: white;
+            border: 1px solid var(--light-gray);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .product-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .product-name {
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .product-data {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .data-item {
+            margin-bottom: 0.5rem;
+        }
+        
+        .data-label {
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+        
+        .data-value {
+            font-weight: bold;
+        }
+        
+        .suggestions {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--light-gray);
+        }
+        
+        .suggestion-item {
+            background: #e7f3ff;
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .ai-insights {
+            background: #f0f8ff;
+            border-left: 4px solid var(--primary);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-top: 2rem;
+        }
+        
+        .insight-item {
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #d1e7ff;
+        }
+        
+        .insight-item:last-child {
+            margin-bottom: 0;
+            border-bottom: none;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gray);
+            margin-top: 2rem;
+        }
+        
+        .unit-type {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+        
+        .type-ubs { background: var(--success-light); color: var(--success-dark); }
+        .type-cais { background: var(--info-light); color: var(--info-dark); }
+        .type-demais { background: #f8d7da; color: #721c24; }
+        
+        .efficiency-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .efficiency-stat-card {
+            background: var(--light);
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+        
+        .efficiency-stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .efficiency-stat-card.efficient {
+            border-left: 4px solid var(--secondary);
+        }
+        
+        .efficiency-stat-card.attention {
+            border-left: 4px solid var(--warning);
+        }
+        
+        .efficiency-stat-card.critical {
+            border-left: 4px solid var(--danger);
+        }
+        
+        .efficiency-stat-card h3 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .efficiency-stat-card.efficient h3 {
+            color: var(--secondary);
+        }
+        
+        .efficiency-stat-card.attention h3 {
+            color: var(--warning);
+        }
+        
+        .efficiency-stat-card.critical h3 {
+            color: var(--danger);
+        }
+        
+        .efficiency-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .efficiency-high {
+            background: var(--success-light);
+            color: var(--success-dark);
+        }
+        
+        .efficiency-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .efficiency-low {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .product-detail-panel {
+            display: none;
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            margin-top: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid var(--primary);
+        }
+        
+        .product-detail-panel.active {
+            display: block;
+        }
+        
+        .product-detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .product-detail-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .product-detail-stat {
+            background: var(--light);
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .product-detail-stat:hover {
+            transform: translateY(-3px);
+        }
+        
+        .product-detail-stat h3 {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .units-distribution {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 1rem;
+        }
+        
+        .unit-distribution-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            background: var(--light);
+            border-radius: 6px;
+            border-left: 4px solid var(--primary);
+            transition: background 0.3s ease;
+        }
+        
+        .unit-distribution-item:hover {
+            background: #e9ecef;
+        }
+        
+        .unit-distribution-info {
+            flex: 1;
+        }
+        
+        .unit-distribution-stock {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .stock-bar {
+            width: 100px;
+            height: 8px;
+            background: var(--light-gray);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .stock-fill {
+            height: 100%;
+            border-radius: 4px;
+        }
+        
+        .stock-fill.ok { background: var(--secondary); }
+        .stock-fill.warning { background: var(--warning); }
+        .stock-fill.danger { background: var(--danger); }
+        
+        .clickable-row {
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        
+        .clickable-row:hover {
+            background-color: rgba(26, 82, 118, 0.1) !important;
+        }
+        
+        .export-section {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .export-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+        
+        .export-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+        
+        .export-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        
+        .export-btn.warning {
+            background: var(--warning);
+            color: var(--dark);
+        }
+        
+        .export-btn.warning:hover {
+            background: #e0a800;
+        }
+        
+        .export-btn.danger {
+            background: var(--danger);
+        }
+        
+        .export-btn.danger:hover {
+            background: #c82333;
+        }
+        
+        .suggestion-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        .suggestion-card {
+            background: white;
+            border: 1px solid var(--light-gray);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .suggestion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .respondent-info {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--light-gray);
+        }
+        
+        .respondent-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .respondent-details {
+            flex: 1;
+        }
+        
+        .respondent-name {
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+        
+        .respondent-role {
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+        
+        .suggestion-date {
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+        
+        .supplier-issues {
+            background: #fff3cd;
+            border-left: 4px solid var(--warning);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-top: 2rem;
+        }
+        
+        .issue-item {
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #ffeaa7;
+        }
+        
+        .issue-item:last-child {
+            margin-bottom: 0;
+            border-bottom: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .admin-panel {
+            display: none;
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            margin-top: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .admin-login {
+            max-width: 400px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .admin-login h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 0.7rem 1rem;
+            border: 1px solid var(--light-gray);
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        
+        .admin-tabs {
+            display: flex;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .admin-tab {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .admin-tab.active {
+            border-bottom: 3px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .admin-tab-content {
+            display: none;
+        }
+        
+        .admin-tab-content.active {
+            display: block;
+        }
+        
+        .upload-area {
+            border: 2px dashed var(--light-gray);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(26, 82, 118, 0.05);
+        }
+        
+        .upload-area i {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        
+        .csv-preview {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 1.5rem;
+        }
+        
+        .admin-logout {
+            text-align: right;
+            margin-bottom: 1rem;
+        }
+        
+        .month-selector {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+        
+        .month-selector label {
+            font-weight: 500;
+        }
+        
+        .unit-manager {
+            margin-top: 2rem;
+        }
+        
+        .unit-manager-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .units-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .unit-manager-card {
+            background: white;
+            border: 1px solid var(--light-gray);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+        
+        .unit-manager-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .unit-manager-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .unit-manager-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .unit-manager-btn {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+        }
+        
+        .suggestions-container {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .suggestion-full-item {
+            background: #f8f9fa;
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+            transition: background 0.3s ease;
+        }
+        
+        .suggestion-full-item:hover {
+            background: #e9ecef;
+        }
+        
+        .suggestion-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--gray);
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: var(--light-gray);
+        }
+        
+        .suggestion-form {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .suggestion-form textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 1px solid var(--light-gray);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .suggestion-form button {
+            margin-top: 1rem;
+        }
+        
+        @media (max-width: 1200px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats, .efficiency-stats, .product-detail-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .unit-details, .suggestion-details {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .stats, .efficiency-stats, .product-detail-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+            
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                flex: 1;
+                min-width: 120px;
+                text-align: center;
+            }
+            
+            .export-buttons {
+                flex-direction: column;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .month-selector {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        /* Novos estilos para melhorias */
+        .suggestion-details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .suggestion-details-table th, 
+        .suggestion-details-table td {
+            padding: 10px;
+            border: 1px solid var(--light-gray);
+            text-align: left;
+        }
+        
+        .suggestion-details-table th {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .backup-upload-area {
+            border: 2px dashed var(--light-gray);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            margin: 1rem 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .backup-upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(26, 82, 118, 0.05);
+        }
+        
+        .firebase-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            z-index: 1000;
+        }
+        
+        .firebase-connected {
+            background: var(--success-light);
+            color: var(--success-dark);
+        }
+        
+        .firebase-disconnected {
+            background: var(--danger);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="firebase-status" id="firebaseStatus">Conectando...</div>
+    
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        <p>Carregando dados...</p>
+    </div>
+
+    <div class="container" id="main-content">
+        <header>
+            <div class="header-content">
+                <div class="logo-container">
+                    <i class="fas fa-hand-holding-medical logo"></i>
+                    <div class="header-text">
+                        <h1>Painel Completo - Materiais de Limpeza</h1>
+                        <p>Secretaria Municipal de Saúde - Visão Consolidada de Todas as Unidades</p>
+                    </div>
+                </div>
+                <div class="header-stats">
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold;" id="totalUnits">0</div>
+                        <div style="font-size: 0.8rem;">Unidades Monitoradas</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="dashboard">
+            <div class="tabs">
+                <div class="tab active" data-tab="overview">Visão Geral</div>
+                <div class="tab" data-tab="efficiency">Eficiência de Estoque</div>
+                <div class="tab" data-tab="units">Unidades</div>
+                <div class="tab" data-tab="products">Produtos</div>
+                <div class="tab" data-tab="suggestions">Sugestões</div>
+                <div class="tab" data-tab="analysis">Análise IA</div>
+                <div class="tab" data-tab="admin">Administração</div>
+                <div class="tab admin-only" data-tab="manage-units" style="display: none;">Gerenciar Unidades</div>
+            </div>
+            
+            <div class="tab-content active" id="overview">
+                <div class="export-section">
+                    <h3><i class="fas fa-file-export"></i> Exportar Relatórios</h3>
+                    <p>Gere relatórios em PDF para documentação oficial e auditoria</p>
+                    <div class="export-buttons">
+                        <button class="export-btn" id="exportOverview">
+                            <i class="fas fa-file-pdf"></i> Exportar Visão Geral
+                        </button>
+                        <button class="export-btn warning" id="exportCritical">
+                            <i class="fas fa-exclamation-triangle"></i> Exportar Situação Crítica
+                        </button>
+                        <button class="export-btn danger" id="exportSupplierIssues">
+                            <i class="fas fa-truck-loading"></i> Exportar Problemas com Fornecedor
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <select id="filterType">
+                        <option value="all">Todos os Tipos</option>
+                        <option value="UBS">UBS</option>
+                        <option value="CAIS">CAIS</option>
+                        <option value="DEMAIS">Demais</option>
+                    </select>
+                    <select id="monthFilterOverview">
+                        <!-- Opções de mês serão preenchidas via JavaScript -->
+                    </select>
+                    <button id="refreshData">
+                        <i class="fas fa-sync-alt"></i> Atualizar Dados
+                    </button>
+                </div>
+                
+                <div id="overviewEmptyState" class="empty-state">
+                    <i class="fas fa-database"></i>
+                    <h3>Nenhum dado disponível</h3>
+                    <p>Faça upload de arquivos CSV na aba Administração para visualizar os dados.</p>
+                </div>
+                
+                <div id="overviewContent" style="display: none;">
+                    <div class="stats">
+                        <div class="stat-card">
+                            <h3 id="totalUnitsCount">0</h3>
+                            <p>Unidades de Saúde</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 id="totalProductsCount">0</h3>
+                            <p>Tipos de Produtos</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 id="criticalAlerts">0</h3>
+                            <p>Alertas Críticos</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 id="suggestionsCount">0</h3>
+                            <p>Sugestões Recebidas</p>
+                        </div>
+                    </div>
+                    
+                    <div class="charts-grid">
+                        <div class="chart-container">
+                            <h3>Status do Estoque por Unidade</h3>
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3>Produtos Mais Faltantes</h3>
+                            <canvas id="productsChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3>Distribuição por Tipo de Unidade</h3>
+                            <canvas id="typeChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3>Evolução de Alertas (Últimos 6 Meses)</h3>
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <h3>Unidades com Mais Solicitações</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Unidade</th>
+                                    <th>Tipo</th>
+                                    <th>Produtos Críticos</th>
+                                    <th>Produtos em Atenção</th>
+                                    <th>Sugestões</th>
+                                    <th>Status Geral</th>
+                                    <th>Última Atualização</th>
+                                </tr>
+                            </thead>
+                            <tbody id="summaryTableBody">
+                                <!-- Dados preenchidos via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="efficiency">
+                <h2><i class="fas fa-chart-line"></i> Eficiência de Estoque por Unidade</h2>
+                <p class="data-label" style="margin-bottom: 1.5rem;">Análise da adequação entre materiais disponibilizados e necessidades mínimas sugeridas</p>
+                
+                <div class="month-selector">
+                    <label for="monthFilterEfficiency">Mês de referência:</label>
+                    <select id="monthFilterEfficiency">
+                        <!-- Opções de mês serão preenchidas via JavaScript -->
+                    </select>
+                </div>
+                
+                <div id="efficiencyEmptyState" class="empty-state">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>Nenhum dado disponível</h3>
+                    <p>Faça upload de arquivos CSV na aba Administração para visualizar os dados de eficiência.</p>
+                </div>
+                
+                <div id="efficiencyContent" style="display: none;">
+                    <div class="efficiency-stats">
+                        <div class="efficiency-stat-card efficient">
+                            <h3 id="efficientUnits">0</h3>
+                            <p>Unidades Eficientes</p>
+                            <small>Eficiência ≥ 90%</small>
+                        </div>
+                        <div class="efficiency-stat-card attention">
+                            <h3 id="attentionUnits">0</h3>
+                            <p>Unidades em Atenção</p>
+                            <small>Eficiência 70-89%</small>
+                        </div>
+                        <div class="efficiency-stat-card critical">
+                            <h3 id="criticalUnits">0</h3>
+                            <p>Unidades Críticas</p>
+                            <small>Eficiência < 70%</small>
+                        </div>
+                    </div>
+                    
+                    <div class="charts-grid">
+                        <div class="chart-container">
+                            <h3>Distribuição da Eficiência</h3>
+                            <canvas id="efficiencyDistributionChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3>Unidades Mais Eficientes</h3>
+                            <canvas id="topEfficiencyChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3>Unidades Menos Eficientes</h3>
+                            <canvas id="bottomEfficiencyChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3>Eficiência Média por Tipo de Unidade</h3>
+                            <canvas id="efficiencyByTypeChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <h3>Ranking de Eficiência por Unidade</h3>
+                        <table class="ranking-table">
+                            <thead>
+                                <tr>
+                                    <th>Posição</th>
+                                    <th>Unidade</th>
+                                    <th>Tipo</th>
+                                    <th>Eficiência</th>
+                                    <th>Status</th>
+                                    <th>Produtos Analisados</th>
+                                </tr>
+                            </thead>
+                            <tbody id="efficiencyTableBody">
+                                <!-- Dados preenchidos via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="units">
+                <div class="unit-details">
+                    <div class="units-list">
+                        <h3>Lista de Unidades</h3>
+                        <div class="month-selector">
+                            <label for="monthFilterUnits">Mês de referência:</label>
+                            <select id="monthFilterUnits">
+                                <!-- Opções de mês serão preenchidas via JavaScript -->
+                            </select>
+                        </div>
+                        <div id="unitsListContainer">
+                            <!-- Lista de unidades preenchida via JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <div class="unit-details-content">
+                        <h3 id="selectedUnitName">Selecione uma unidade para ver detalhes</h3>
+                        <div id="unitProductsGrid" class="product-grid">
+                            <!-- Produtos da unidade selecionada -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="products">
+                <div class="controls">
+                    <select id="filterProduct">
+                        <option value="all">Todos os Produtos</option>
+                        <!-- Opções preenchidas via JavaScript -->
+                    </select>
+                    <select id="monthFilterProducts">
+                        <!-- Opções de mês serão preenchidas via JavaScript -->
+                    </select>
+                    <button id="refreshProducts">
+                        <i class="fas fa-sync-alt"></i> Atualizar Dados
+                    </button>
+                </div>
+                
+                <div id="productsEmptyState" class="empty-state">
+                    <i class="fas fa-boxes"></i>
+                    <h3>Nenhum produto cadastrado</h3>
+                    <p>Faça upload de arquivos CSV na aba Administração para visualizar os produtos.</p>
+                </div>
+                
+                <div id="productsContent" style="display: none;">
+                    <div class="table-container">
+                        <h3>Detalhamento por Produto</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Produto</th>
+                                    <th>Total Disponível</th>
+                                    <th>Total Mínimo Sugerido</th>
+                                    <th>Unidades com Estoque Baixo</th>
+                                    <th>Unidades com Estoque Crítico</th>
+                                    <th>Status Geral</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTableBody">
+                                <!-- Dados preenchidos via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="product-detail-panel" id="productDetailPanel">
+                        <div class="product-detail-header">
+                            <h2 id="selectedProductName">Detalhes do Produto</h2>
+                            <button class="export-btn" id="exportProductDetail">
+                                <i class="fas fa-file-pdf"></i> Exportar Detalhes
+                            </button>
+                        </div>
+                        
+                        <div class="product-detail-stats">
+                            <div class="product-detail-stat">
+                                <h3 id="detailTotalStock">0</h3>
+                                <p>Total em Estoque</p>
+                            </div>
+                            <div class="product-detail-stat">
+                                <h3 id="detailTotalMin">0</h3>
+                                <p>Mínimo Sugerido</p>
+                            </div>
+                            <div class="product-detail-stat">
+                                <h3 id="detailLowStock">0</h3>
+                                <p>Unidades com Baixo Estoque</p>
+                            </div>
+                            <div class="product-detail-stat">
+                                <h3 id="detailCriticalStock">0</h3>
+                                <p>Unidades Críticas</p>
+                            </div>
+                        </div>
+                        
+                        <div class="charts-grid">
+                            <div class="chart-container">
+                                <h3>Distribuição por Unidade</h3>
+                                <canvas id="productDistributionChart"></canvas>
+                            </div>
+                            <div class="chart-container">
+                                <h3>Status do Estoque</h3>
+                                <canvas id="productStatusChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="table-container">
+                            <h3>Distribuição por Unidade</h3>
+                            <div class="units-distribution" id="unitsDistribution">
+                                <!-- Lista de unidades preenchida via JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="suggestions">
+                <h2><i class="fas fa-comments"></i> Sugestões das Unidades</h2>
+                <p class="data-label" style="margin-bottom: 1.5rem;">Sugestões enviadas pelas unidades com detalhes dos respondentes</p>
+                
+                <div class="month-selector">
+                    <label for="monthFilterSuggestions">Mês de referência:</label>
+                    <select id="monthFilterSuggestions">
+                        <!-- Opções de mês serão preenchidas via JavaScript -->
+                    </select>
+                </div>
+                
+                <div class="suggestion-form">
+                    <h3><i class="fas fa-lightbulb"></i> Sugestão de Produto Não Disponibilizado e Necessário</h3>
+                    <p>Utilize este espaço para sugerir produtos que não estão disponíveis mas que são necessários para a sua unidade:</p>
+                    <textarea id="newSuggestion" placeholder="Descreva aqui sua sugestão de produto não disponibilizado e necessário..."></textarea>
+                    <button id="submitSuggestion" class="export-btn">
+                        <i class="fas fa-paper-plane"></i> Enviar Sugestão
+                    </button>
+                </div>
+                
+                <div id="suggestionsEmptyState" class="empty-state">
+                    <i class="fas fa-comments"></i>
+                    <h3>Nenhuma sugestão disponível</h3>
+                    <p>Faça upload de arquivos CSV na aba Administração para visualizar as sugestões.</p>
+                </div>
+                
+                <div id="suggestionsContent" style="display: none;">
+                    <div class="suggestion-details">
+                        <div class="suggestion-card">
+                            <h3>Últimas Sugestões Recebidas</h3>
+                            <div class="suggestions-container" id="suggestionsList">
+                                <!-- Lista de sugestões preenchida via JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <div class="suggestion-card">
+                            <h3>Detalhes do Respondente</h3>
+                            <div id="respondentDetails">
+                                <!-- Detalhes do respondente preenchidos via JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- NOVA TABELA DE DETALHES DE SUGESTÕES -->
+                    <div class="table-container" style="margin-top: 2rem;">
+                        <h3>Detalhamento de Sugestões por Unidade</h3>
+                        <table class="suggestion-details-table">
+                            <thead>
+                                <tr>
+                                    <th>Unidade</th>
+                                    <th>Produto Sugerido</th>
+                                    <th>Quantidade Mínima Sugerida</th>
+                                    <th>Espaço para Sugestões</th>
+                                    <th>Data</th>
+                                </tr>
+                            </thead>
+                            <tbody id="suggestionsDetailsTableBody">
+                                <!-- Dados preenchidos via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="supplier-issues">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Problemas Identificados com Fornecedor</h3>
+                        <div id="supplierIssuesList">
+                            <!-- Lista de problemas com fornecedor preenchida via JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="analysis">
+                <h2>Análises e Insights por IA</h2>
+                
+                <div class="month-selector">
+                    <label for="monthFilterAnalysis">Mês de referência:</label>
+                    <select id="monthFilterAnalysis">
+                        <!-- Opções de mês serão preenchidas via JavaScript -->
+                    </select>
+                </div>
+                
+                <div id="analysisEmptyState" class="empty-state">
+                    <i class="fas fa-robot"></i>
+                    <h3>Nenhum dado para análise</h3>
+                    <p>Faça upload de arquivos CSV na aba Administração para gerar insights.</p>
+                </div>
+                
+                <div id="analysisContent" style="display: none;">
+                    <div class="ai-insights">
+                        <h3><i class="fas fa-robot"></i> Insights Inteligentes</h3>
+                        
+                        <div class="insight-item">
+                            <h4>📊 Padrões de Consumo Identificados</h4>
+                            <p id="consumptionPatterns">Carregando análise...</p>
+                        </div>
+                        
+                        <div class="insight-item">
+                            <h4>🚨 Alertas Prioritários</h4>
+                            <p id="priorityAlerts">Carregando análise...</p>
+                        </div>
+                    
+                        <div class="insight-item">
+                            <h4>💡 Sugestões Consolidadas</h4>
+                            <p id="consolidatedSuggestions">Carregando análise...</p>
+                        </div>
+                    
+                        <div class="insight-item">
+                            <h4>📈 Tendências e Previsões</h4>
+                            <p id="trendsPredictions">Carregando análise...</p>
+                        </div>
+                    
+                        <div class="insight-item">
+                            <h4>💰 Otimização de Recursos</h4>
+                            <p id="resourceOptimization">Carregando análise...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="charts-grid" style="margin-top: 2rem;">
+                        <div class="chart-container">
+                            <h3>Eficiência de Estoque por Tipo</h3>
+                            <canvas id="efficiencyChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h3>Correlação entre Produtos</h3>
+                            <canvas id="correlationChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ÁREA ADMINISTRATIVA -->
+            <div class="tab-content" id="admin">
+                <div id="adminLogin" class="admin-login">
+                    <h2><i class="fas fa-lock"></i> Acesso Administrativo</h2>
+                    <div class="form-group">
+                        <label for="adminUsername">Usuário</label>
+                        <input type="text" id="adminUsername" placeholder="Digite seu usuário">
+                    </div>
+                    <div class="form-group">
+                        <label for="adminPassword">Senha</label>
+                        <input type="password" id="adminPassword" placeholder="Digite sua senha">
+                    </div>
+                    <button id="adminLoginBtn" class="export-btn" style="width: 100%;">
+                        <i class="fas fa-sign-in-alt"></i> Entrar
+                    </button>
+                </div>
+                
+                <div id="adminPanel" class="admin-panel">
+                    <div class="admin-logout">
+                        <button id="adminLogoutBtn" class="export-btn danger">
+                            <i class="fas fa-sign-out-alt"></i> Sair
+                        </button>
+                    </div>
+                    
+                    <h2><i class="fas fa-cogs"></i> Painel Administrativo</h2>
+                    
+                    <div class="admin-tabs">
+                        <div class="admin-tab active" data-admin-tab="upload">Upload de Dados</div>
+                        <div class="admin-tab" data-admin-tab="backup">Backup & Restauração</div>
+                    </div>
+                    
+                    <div class="admin-tab-content active" id="adminUpload">
+                        <h3>Upload de Arquivos CSV</h3>
+                        <p>Faça upload de arquivos CSV contendo dados das unidades para atualizar o sistema.</p>
+                        
+                        <div class="month-selector">
+                            <label for="uploadMonth">Mês de referência:</label>
+                            <input type="month" id="uploadMonth" required>
+                        </div>
+                        
+                        <div class="upload-area" id="csvUploadArea">
+                            <i class="fas fa-file-csv"></i>
+                            <h4>Arraste e solte o arquivo CSV da unidade aqui</h4>
+                            <p>ou clique para selecionar</p>
+                            <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
+                        </div>
+                        
+                        <div class="controls">
+                            <button id="processCsvBtn" class="export-btn">
+                                <i class="fas fa-cogs"></i> Processar CSV
+                            </button>
+                            <button id="downloadTemplateBtn" class="export-btn warning">
+                                <i class="fas fa-download"></i> Baixar Modelo
+                            </button>
+                        </div>
+                        
+                        <div id="csvPreview" class="csv-preview" style="display: none;">
+                            <h4>Prévia dos Dados</h4>
+                            <div id="csvPreviewTable"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="admin-tab-content" id="adminBackup">
+                        <h3>Backup e Restauração de Dados</h3>
+                        <p>Faça backup de todos os dados do sistema ou restaure a partir de um backup anterior.</p>
+                        
+                        <div class="controls">
+                            <button id="exportBackupBtn" class="export-btn">
+                                <i class="fas fa-download"></i> Exportar Backup (CSV)
+                            </button>
+                            <button id="importBackupBtn" class="export-btn warning">
+                                <i class="fas fa-upload"></i> Importar Backup (CSV)
+                            </button>
+                            <input type="file" id="backupFileInput" accept=".csv" style="display: none;">
+                        </div>
+                        
+                        <div class="backup-upload-area" id="backupUploadArea">
+                            <i class="fas fa-file-csv"></i>
+                            <h4>Arraste e solte o arquivo de backup CSV aqui</h4>
+                            <p>ou clique para selecionar</p>
+                        </div>
+                        
+                        <div id="backupInfo" style="margin-top: 1rem; padding: 1rem; background: var(--light); border-radius: 6px;">
+                            <h4><i class="fas fa-info-circle"></i> Informações sobre o Backup</h4>
+                            <p>O backup será gerado em formato CSV contendo todas as unidades e seus dados.</p>
+                            <p>Para restaurar, faça upload de um arquivo CSV no formato correto.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- GERENCIAR UNIDADES (VISÍVEL APENAS PARA ADMIN) -->
+            <div class="tab-content" id="manage-units">
+                <h2><i class="fas fa-hospital-user"></i> Gerenciar Unidades</h2>
+                <p class="data-label" style="margin-bottom: 1.5rem;">Visualize e gerencie todas as unidades de saúde cadastradas no sistema</p>
+                
+                <div class="unit-manager-header">
+                    <h3>Todas as Unidades Cadastradas</h3>
+                    <button class="export-btn" id="addUnitBtn">
+                        <i class="fas fa-plus"></i> Adicionar Unidade
+                    </button>
+                </div>
+                
+                <div class="month-selector">
+                    <label for="monthFilterManage">Mês de referência:</label>
+                    <select id="monthFilterManage">
+                        <!-- Opções de mês serão preenchidas via JavaScript -->
+                    </select>
+                </div>
+                
+                <div id="manageUnitsEmptyState" class="empty-state">
+                    <i class="fas fa-hospital-user"></i>
+                    <h3>Nenhuma unidade cadastrada</h3>
+                    <p>Faça upload de arquivos CSV na aba Administração para adicionar unidades.</p>
+                </div>
+                
+                <div id="unitsGrid" style="display: none;">
+                    <!-- Unidades serão preenchidas via JavaScript -->
+                </div>
+                
+                <div class="table-container" style="margin-top: 2rem; display: none;" id="allUnitsTableContainer">
+                    <h3>Resumo de Todas as Unidades</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Unidade</th>
+                                <th>Tipo</th>
+                                <th>Produtos</th>
+                                <th>Status</th>
+                                <th>Sugestões</th>
+                                <th>Última Atualização</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allUnitsTable">
+                            <!-- Dados preenchidos via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Secretaria Municipal de Saúde &copy; 2025 - Sistema de Controle de Materiais de Limpeza</p>
+            <p>Painel de Monitoramento Completo - Dados em Tempo Real</p>
+        </footer>
+    </div>
+
+    <script>
+        // ===============================
+        // CONFIGURAÇÃO DO FIREBASE
+        // ===============================
+        
+        // Configurações do Firebase fornecidas
+        const firebaseConfig = {
+            apiKey: "AIzaSyCFeYDNbXWNXSBPedaOXfSnDmlLh8Xtn9I",
+            authDomain: "materiais-aeb0e.firebaseapp.com",
+            projectId: "materiais-aeb0e",
+            storageBucket: "materiais-aeb0e.firebasestorage.app",
+            messagingSenderId: "78482972694",
+            appId: "1:78482972694:web:659039bd4f6ba8689e1537",
+            measurementId: "G-70BPGLZ63L"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        // ===============================
+        // ESTRUTURA DE DADOS PRINCIPAL
+        // ===============================
+        
+        let appData = {
+            unidades: [],
+            meses: {},
+            currentMonth: new Date().toISOString().slice(0, 7), // YYYY-MM
+            lastUpdate: new Date().toISOString(),
+            isAdmin: false
+        };
+
+        // ===============================
+        // FUNÇÕES DO FIREBASE
+        // ===============================
+        
+        // Carregar dados do Firestore
+        async function loadData() {
+            try {
+                const doc = await db.collection('limpezaData').doc('appData').get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    appData = { ...appData, ...data };
+                    console.log('Dados carregados do Firebase:', appData);
+                } else {
+                    console.log('Nenhum documento encontrado. Usando dados iniciais.');
+                    // Salvar dados iniciais no Firebase
+                    await saveData();
+                }
+                
+                // Garantir que a estrutura de meses esteja correta
+                if (!appData.meses) appData.meses = {};
+                
+                // Garantir que todas as unidades tenham dados para o mês atual
+                appData.unidades.forEach(unidade => {
+                    if (!unidade.meses) unidade.meses = {};
+                    if (!unidade.meses[appData.currentMonth]) {
+                        unidade.meses[appData.currentMonth] = {
+                            produtos: {},
+                            sugestoes: [],
+                            dataImportacao: new Date().toISOString()
+                        };
+                    }
+                });
+                
+                return appData;
+            } catch (error) {
+                console.error('Erro ao carregar dados do Firebase:', error);
+                throw error;
+            }
+        }
+
+        // Salvar dados no Firestore
+        async function saveData() {
+            try {
+                appData.lastUpdate = new Date().toISOString();
+                await db.collection('limpezaData').doc('appData').set(appData);
+                console.log('Dados salvos no Firebase com sucesso');
+                return true;
+            } catch (error) {
+                console.error('Erro ao salvar dados no Firebase:', error);
+                throw error;
+            }
+        }
+
+        // Monitorar status da conexão Firebase
+        function monitorFirebaseConnection() {
+            const statusElement = document.getElementById('firebaseStatus');
+            
+            firebase.firestore().enableNetwork()
+                .then(() => {
+                    statusElement.textContent = 'Conectado ao Firebase';
+                    statusElement.className = 'firebase-status firebase-connected';
+                })
+                .catch((error) => {
+                    statusElement.textContent = 'Desconectado do Firebase';
+                    statusElement.className = 'firebase-status firebase-disconnected';
+                    console.error('Erro de conexão Firebase:', error);
+                });
+            
+            // Monitorar mudanças de conexão
+            firebase.firestore().onSnapshotsInSync(() => {
+                statusElement.textContent = 'Conectado ao Firebase';
+                statusElement.className = 'firebase-status firebase-connected';
+            });
+        }
+
+        // ===============================
+        // FUNÇÕES PRINCIPAIS DO SISTEMA
+        // ===============================
+        
+        // Função para mostrar/ocultar loading
+        function toggleLoading(show) {
+            const loading = document.getElementById('loading');
+            const mainContent = document.getElementById('main-content');
+            
+            if (show) {
+                loading.style.display = 'block';
+                mainContent.style.display = 'none';
+            } else {
+                loading.style.display = 'none';
+                mainContent.style.display = 'block';
+            }
+        }
+
+        // Verificar se há dados para exibir
+        function hasData() {
+            return appData.unidades.length > 0;
+        }
+
+        // Atualizar visibilidade dos estados vazios
+        function updateEmptyStates() {
+            const hasDataFlag = hasData();
+            
+            // Mostrar/ocultar estados vazios
+            document.getElementById('overviewEmptyState').style.display = hasDataFlag ? 'none' : 'block';
+            document.getElementById('overviewContent').style.display = hasDataFlag ? 'block' : 'none';
+            
+            document.getElementById('efficiencyEmptyState').style.display = hasDataFlag ? 'none' : 'block';
+            document.getElementById('efficiencyContent').style.display = hasDataFlag ? 'block' : 'none';
+            
+            // REMOVIDO: Não mostrar mensagem de unidades vazias
+            document.getElementById('unitsListContainer').style.display = 'block';
+            
+            document.getElementById('productsEmptyState').style.display = hasDataFlag ? 'none' : 'block';
+            document.getElementById('productsContent').style.display = hasDataFlag ? 'block' : 'none';
+            
+            document.getElementById('suggestionsEmptyState').style.display = hasDataFlag ? 'none' : 'block';
+            document.getElementById('suggestionsContent').style.display = hasDataFlag ? 'block' : 'none';
+            
+            document.getElementById('analysisEmptyState').style.display = hasDataFlag ? 'none' : 'block';
+            document.getElementById('analysisContent').style.display = hasDataFlag ? 'block' : 'none';
+            
+            document.getElementById('manageUnitsEmptyState').style.display = hasDataFlag ? 'none' : 'block';
+            document.getElementById('unitsGrid').style.display = hasDataFlag ? 'grid' : 'none';
+            document.getElementById('allUnitsTableContainer').style.display = hasDataFlag ? 'block' : 'none';
+        }
+
+        // Inicializar o dashboard
+        async function initDashboard() {
+            toggleLoading(true);
+            
+            try {
+                // Inicializar Firebase
+                monitorFirebaseConnection();
+                
+                // Carregar dados
+                await loadData();
+                
+                // Inicializar interface
+                updateMonthSelectors();
+                setupEventListeners();
+                updateEmptyStates();
+                updateManageUnitsTabVisibility();
+                
+                if (hasData()) {
+                    updateDashboard();
+                }
+                
+                toggleLoading(false);
+            } catch (error) {
+                console.error('Erro ao inicializar dashboard:', error);
+                toggleLoading(false);
+                alert('Erro ao carregar dados. Verifique o console para mais detalhes.');
+            }
+        }
+
+        // ===============================
+        // FUNÇÕES DE PROCESSAMENTO DE DADOS
+        // ===============================
+        
+        // Processar dados do CSV
+        async function processCSVData(csvContent, unitName, month) {
+            const lines = csvContent.split('\n');
+            let currentUnit = null;
+            
+            // Encontrar a unidade ou criar uma nova
+            currentUnit = appData.unidades.find(u => u.nome === unitName);
+            if (!currentUnit) {
+                currentUnit = {
+                    id: Date.now().toString(),
+                    nome: unitName,
+                    tipo: unitName.includes("UBS") ? "UBS" : 
+                          unitName.includes("Cais") ? "CAIS" : "DEMAIS",
+                    meses: {}
+                };
+                appData.unidades.push(currentUnit);
+            }
+            
+            // Inicializar dados do mês se necessário
+            if (!currentUnit.meses[month]) {
+                currentUnit.meses[month] = {
+                    produtos: {},
+                    sugestoes: [],
+                    dataImportacao: new Date().toISOString()
+                };
+            }
+            
+            const monthData = currentUnit.meses[month];
+            
+            // Processar linhas do CSV
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                
+                // Processar linhas de produtos (começam com números)
+                if (/^\d+,/.test(line)) {
+                    const parts = line.split(',').map(part => part.trim().replace(/"/g, ''));
+                    if (parts.length >= 3) {
+                        const productName = parts[1];
+                        const quantityAvailable = parseInt(parts[2]) || 0;
+                        const minSuggested = parseInt(parts[3]) || 0;
+                        
+                        // Determinar status baseado na quantidade disponível vs mínima sugerida
+                        let status = "ok";
+                        if (quantityAvailable === 0) {
+                            status = "danger";
+                        } else if (quantityAvailable < minSuggested) {
+                            status = "warning";
+                        }
+                        
+                        // Adicionar produto à unidade
+                        monthData.produtos[productName] = {
+                            current: quantityAvailable,
+                            min: minSuggested,
+                            status: status
+                        };
+                    }
+                }
+                
+                // Processar sugestões (coluna "ESPAÇO PARA SUGESTÕES")
+                if (line.includes('ESPAÇO PARA SUGESTÕES') || (i > 0 && line.includes('"'))) {
+                    const parts = line.split(',').map(part => part.trim().replace(/"/g, ''));
+                    if (parts.length > 7 && parts[7]) {
+                        const sugestao = parts[7];
+                        if (sugestao && !sugestao.includes('ESPAÇO PARA SUGESTÕES')) {
+                            // Verificar se a sugestão já existe para evitar duplicatas
+                            const exists = monthData.sugestoes.some(s => s.texto === sugestao);
+                            if (!exists) {
+                                monthData.sugestoes.push({
+                                    id: monthData.sugestoes.length + 1,
+                                    texto: sugestao,
+                                    data: new Date().toISOString(),
+                                    produto: parts[1] ? parts[1] : 'Geral'
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Salvar dados atualizados
+            await saveData();
+            return currentUnit;
+        }
+
+        // Obter dados consolidados para um mês específico
+        function getMonthData(month) {
+            const unidadesDoMes = appData.unidades.filter(u => u.meses[month]);
+            
+            // Consolidar produtos de todas as unidades
+            const produtosConsolidados = {};
+            const sugestoesConsolidadas = [];
+            
+            unidadesDoMes.forEach(unidade => {
+                const mesData = unidade.meses[month];
+                
+                // Consolidar produtos
+                Object.entries(mesData.produtos).forEach(([productName, productData]) => {
+                    if (!produtosConsolidados[productName]) {
+                        produtosConsolidados[productName] = {
+                            current: 0,
+                            min: 0,
+                            unidades: []
+                        };
+                    }
+                    
+                    produtosConsolidados[productName].current += productData.current;
+                    produtosConsolidados[productName].min += productData.min;
+                    produtosConsolidados[productName].unidades.push({
+                        unidade: unidade.nome,
+                        ...productData
+                    });
+                });
+                
+                // Consolidar sugestões
+                sugestoesConsolidadas.push(...mesData.sugestoes.map(s => ({
+                    ...s,
+                    unidade: unidade.nome,
+                    tipo: unidade.tipo
+                })));
+            });
+            
+            return {
+                unidades: unidadesDoMes,
+                produtos: produtosConsolidados,
+                sugestoes: sugestoesConsolidadas
+            };
+        }
+
+        // ===============================
+        // FUNÇÕES DE INTERFACE
+        // ===============================
+        
+        // Atualizar seletor de meses
+        function updateMonthSelectors() {
+            const monthSelectors = [
+                'monthFilterOverview', 'monthFilterEfficiency', 'monthFilterUnits',
+                'monthFilterProducts', 'monthFilterSuggestions', 'monthFilterAnalysis',
+                'monthFilterManage'
+            ];
+            
+            // Coletar todos os meses disponíveis
+            const availableMonths = new Set();
+            appData.unidades.forEach(unidade => {
+                Object.keys(unidade.meses).forEach(month => {
+                    availableMonths.add(month);
+                });
+            });
+            
+            // Ordenar meses (do mais recente para o mais antigo)
+            const sortedMonths = Array.from(availableMonths).sort().reverse();
+            
+            // Atualizar todos os seletores
+            monthSelectors.forEach(selectorId => {
+                const selector = document.getElementById(selectorId);
+                if (selector) {
+                    selector.innerHTML = '';
+                    
+                    sortedMonths.forEach(month => {
+                        const option = document.createElement('option');
+                        option.value = month;
+                        option.textContent = formatMonth(month);
+                        if (month === appData.currentMonth) {
+                            option.selected = true;
+                        }
+                        selector.appendChild(option);
+                    });
+                    
+                    // Se não há meses, adicionar o mês atual
+                    if (sortedMonths.length === 0) {
+                        const option = document.createElement('option');
+                        option.value = appData.currentMonth;
+                        option.textContent = formatMonth(appData.currentMonth);
+                        option.selected = true;
+                        selector.appendChild(option);
+                    }
+                }
+            });
+        }
+
+        // Formatar mês para exibição (YYYY-MM -> MMM/YYYY)
+        function formatMonth(monthStr) {
+            const [year, month] = monthStr.split('-');
+            const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            return `${monthNames[parseInt(month) - 1]}/${year}`;
+        }
+
+        // Atualizar todo o dashboard com os dados atuais
+        function updateDashboard() {
+            if (!hasData()) {
+                updateEmptyStates();
+                return;
+            }
+            
+            const currentMonth = document.getElementById('monthFilterOverview').value;
+            const monthData = getMonthData(currentMonth);
+            
+            updateStats(monthData);
+            renderCharts(monthData);
+            renderUnitsList(monthData);
+            renderProductsTable(monthData);
+            renderSummaryTable(monthData);
+            renderEfficiencyData(monthData);
+            renderSuggestions(monthData);
+            renderUnitsGrid(monthData);
+            generateAIInsights(monthData);
+        }
+
+        // ===============================
+        // FUNÇÕES DE RENDERIZAÇÃO
+        // ===============================
+        
+        // Atualizar estatísticas gerais
+        function updateStats(monthData) {
+            document.getElementById('totalUnitsCount').textContent = monthData.unidades.length;
+            document.getElementById('totalProductsCount').textContent = Object.keys(monthData.produtos).length;
+            
+            let criticalCount = 0;
+            monthData.unidades.forEach(unidade => {
+                const mesData = unidade.meses[document.getElementById('monthFilterOverview').value];
+                Object.values(mesData.produtos).forEach(product => {
+                    if (product.status === "danger") criticalCount++;
+                });
+            });
+            
+            document.getElementById('criticalAlerts').textContent = criticalCount;
+            document.getElementById('suggestionsCount').textContent = monthData.sugestoes.length;
+        }
+
+        // Renderizar gráficos
+        function renderCharts(monthData) {
+            // Gráfico 1: Status do Estoque por Unidade
+            const statusCtx = document.getElementById('statusChart').getContext('2d');
+            
+            // Contar unidades por status
+            let okCount = 0, warningCount = 0, dangerCount = 0;
+            
+            monthData.unidades.forEach(unidade => {
+                const mesData = unidade.meses[document.getElementById('monthFilterOverview').value];
+                let hasDanger = false, hasWarning = false;
+                
+                Object.values(mesData.produtos).forEach(product => {
+                    if (product.status === "danger") hasDanger = true;
+                    else if (product.status === "warning") hasWarning = true;
+                });
+                
+                if (hasDanger) dangerCount++;
+                else if (hasWarning) warningCount++;
+                else okCount++;
+            });
+            
+            new Chart(statusCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Normal', 'Atenção', 'Crítico'],
+                    datasets: [{
+                        label: 'Unidades',
+                        data: [okCount, warningCount, dangerCount],
+                        backgroundColor: [
+                            'rgba(40, 167, 69, 0.7)',
+                            'rgba(255, 193, 7, 0.7)',
+                            'rgba(220, 53, 69, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgb(40, 167, 69)',
+                            'rgb(255, 193, 7)',
+                            'rgb(220, 53, 69)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Quantidade de Unidades'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Gráfico 2: Produtos Mais Faltantes
+            const productsCtx = document.getElementById('productsChart').getContext('2d');
+            
+            // Calcular produtos mais críticos
+            const productCriticalCount = {};
+            monthData.unidades.forEach(unidade => {
+                const mesData = unidade.meses[document.getElementById('monthFilterOverview').value];
+                Object.entries(mesData.produtos).forEach(([product, data]) => {
+                    if (data.status === "danger") {
+                        productCriticalCount[product] = (productCriticalCount[product] || 0) + 1;
+                    }
+                });
+            });
+            
+            const sortedProducts = Object.entries(productCriticalCount)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+            
+            new Chart(productsCtx, {
+                type: 'bar',
+                data: {
+                    labels: sortedProducts.map(p => p[0]),
+                    datasets: [{
+                        label: 'Unidades com Estoque Crítico',
+                        data: sortedProducts.map(p => p[1]),
+                        backgroundColor: 'rgba(220, 53, 69, 0.7)',
+                        borderColor: 'rgb(220, 53, 69)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Unidades com Estoque Crítico'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Gráfico 3: Distribuição por Tipo de Unidade
+            const typeCtx = document.getElementById('typeChart').getContext('2d');
+            
+            const typeCount = {
+                UBS: 0,
+                CAIS: 0,
+                DEMAIS: 0
+            };
+            
+            monthData.unidades.forEach(unidade => {
+                typeCount[unidade.tipo] = (typeCount[unidade.tipo] || 0) + 1;
+            });
+            
+            new Chart(typeCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['UBS', 'CAIS', 'Demais'],
+                    datasets: [{
+                        data: [typeCount.UBS, typeCount.CAIS, typeCount.DEMAIS],
+                        backgroundColor: [
+                            'rgba(40, 167, 69, 0.7)',
+                            'rgba(0, 123, 255, 0.7)',
+                            'rgba(108, 117, 125, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgb(40, 167, 69)',
+                            'rgb(0, 123, 255)',
+                            'rgb(108, 117, 125)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+            
+            // Gráfico 4: Evolução de Alertas (simplificado)
+            const trendCtx = document.getElementById('trendChart').getContext('2d');
+            
+            // Dados de exemplo para a evolução
+            const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'];
+            const criticalData = [5, 7, 3, 8, 6, 4];
+            const warningData = [10, 8, 12, 9, 11, 7];
+            
+            new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: 'Alertas Críticos',
+                            data: criticalData,
+                            borderColor: 'rgb(220, 53, 69)',
+                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'Alertas de Atenção',
+                            data: warningData,
+                            borderColor: 'rgb(255, 193, 7)',
+                            backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Quantidade de Alertas'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Renderizar lista de unidades
+        function renderUnitsList(monthData) {
+            const container = document.getElementById('unitsListContainer');
+            container.innerHTML = '';
+            
+            monthData.unidades.forEach(unidade => {
+                const mesData = unidade.meses[document.getElementById('monthFilterUnits').value];
+                const criticalCount = Object.values(mesData.produtos).filter(p => p.status === "danger").length;
+                const attentionCount = Object.values(mesData.produtos).filter(p => p.status === "warning").length;
+                
+                const unitElement = document.createElement('div');
+                unitElement.className = 'unit-item';
+                unitElement.innerHTML = `
+                    <div style="font-weight: bold;">${unidade.nome}</div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 0.5rem;">
+                        <span class="unit-type type-${unidade.tipo.toLowerCase()}">${unidade.tipo}</span>
+                        <div>
+                            <span class="status danger" style="margin-right: 0.5rem;">${criticalCount} crítico(s)</span>
+                            <span class="status warning">${attentionCount} atenção</span>
+                        </div>
+                    </div>
+                `;
+                
+                unitElement.addEventListener('click', () => showUnitDetails(unidade));
+                container.appendChild(unitElement);
+            });
+        }
+
+        // Renderizar sugestões com nova tabela de detalhes
+        function renderSuggestions(monthData) {
+            const suggestionsContainer = document.getElementById('suggestionsList');
+            suggestionsContainer.innerHTML = '';
+            
+            if (monthData.sugestoes.length === 0) {
+                suggestionsContainer.innerHTML = '<p>Nenhuma sugestão encontrada para este mês.</p>';
+            } else {
+                monthData.sugestoes.forEach(sugestao => {
+                    const suggestionElement = document.createElement('div');
+                    suggestionElement.className = 'suggestion-full-item';
+                    suggestionElement.innerHTML = `
+                        <div class="suggestion-meta">
+                            <strong>${sugestao.unidade}</strong>
+                            <span class="suggestion-date">${new Date(sugestao.data).toLocaleDateString('pt-BR')}</span>
+                        </div>
+                        <div class="suggestion-content">
+                            <p><strong>Produto:</strong> ${sugestao.produto}</p>
+                            <p>${sugestao.texto}</p>
+                        </div>
+                    `;
+                    suggestionsContainer.appendChild(suggestionElement);
+                });
+            }
+            
+            // NOVA TABELA DE DETALHES DE SUGESTÕES
+            const detailsTableBody = document.getElementById('suggestionsDetailsTableBody');
+            detailsTableBody.innerHTML = '';
+            
+            monthData.sugestoes.forEach(sugestao => {
+                // Encontrar a unidade para obter mais detalhes
+                const unidade = monthData.unidades.find(u => u.nome === sugestao.unidade);
+                const mesData = unidade ? unidade.meses[document.getElementById('monthFilterSuggestions').value] : null;
+                
+                // Obter quantidade mínima sugerida do produto, se disponível
+                let quantidadeMinima = '-';
+                if (mesData && mesData.produtos[sugestao.produto]) {
+                    quantidadeMinima = mesData.produtos[sugestao.produto].min;
+                }
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${sugestao.unidade}</td>
+                    <td>${sugestao.produto}</td>
+                    <td>${quantidadeMinima}</td>
+                    <td>${sugestao.texto}</td>
+                    <td>${new Date(sugestao.data).toLocaleDateString('pt-BR')}</td>
+                `;
+                detailsTableBody.appendChild(row);
+            });
+            
+            const respondentDetails = document.getElementById('respondentDetails');
+            respondentDetails.innerHTML = '<p>Selecione uma sugestão para ver detalhes do respondente.</p>';
+            
+            const supplierIssuesContainer = document.getElementById('supplierIssuesList');
+            const supplierIssues = monthData.sugestoes.filter(s => 
+                s.texto.toLowerCase().includes('fornecedor') || 
+                s.texto.toLowerCase().includes('entrega') ||
+                s.texto.toLowerCase().includes('pedido') ||
+                s.texto.toLowerCase().includes('enviado') ||
+                s.texto.toLowerCase().includes('qualidade')
+            );
+            
+            if (supplierIssues.length === 0) {
+                supplierIssuesContainer.innerHTML = '<p>Nenhum problema específico com fornecedor identificado nas sugestões deste mês.</p>';
+            } else {
+                supplierIssuesContainer.innerHTML = '';
+                supplierIssues.forEach(issue => {
+                    const issueElement = document.createElement('div');
+                    issueElement.className = 'issue-item';
+                    issueElement.innerHTML = `
+                        <h4>${issue.unidade} - ${issue.produto}</h4>
+                        <p>${issue.texto}</p>
+                        <div style="display: flex; justify-content: space-between; margin-top: 0.5rem;">
+                            <span>${issue.unidade}</span>
+                            <span class="suggestion-date">${new Date(issue.data).toLocaleDateString('pt-BR')}</span>
+                        </div>
+                    `;
+                    supplierIssuesContainer.appendChild(issueElement);
+                });
+            }
+        }
+
+        // ===============================
+        // FUNÇÕES ADMINISTRATIVAS
+        // ===============================
+        
+        // Funções administrativas
+        function loginAdmin(username, password) {
+            if (username === 'admin' && password === 'ZXqwas123@') {
+                appData.isAdmin = true;
+                document.getElementById('adminLogin').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                updateManageUnitsTabVisibility();
+                return true;
+            } else {
+                alert('Usuário ou senha incorretos!');
+                return false;
+            }
+        }
+
+        function logoutAdmin() {
+            appData.isAdmin = false;
+            document.getElementById('adminLogin').style.display = 'block';
+            document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('adminUsername').value = '';
+            document.getElementById('adminPassword').value = '';
+            updateManageUnitsTabVisibility();
+        }
+
+        // Processar upload de CSV
+        async function processUploadedCSV(file, month) {
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const csvContent = e.target.result;
+                const previewTable = document.getElementById('csvPreviewTable');
+                const previewContainer = document.getElementById('csvPreview');
+                
+                // Extrair nome da unidade do CSV
+                let unitName = file.name.replace('.csv', '');
+                const lines = csvContent.split('\n');
+                for (let i = 0; i < lines.length; i++) {
+                    if (lines[i].includes('UNIDADE:')) {
+                        const parts = lines[i].split(',');
+                        if (parts.length > 1 && parts[1].trim()) {
+                            unitName = parts[1].trim();
+                            break;
+                        }
+                    }
+                }
+                
+                // Mostrar prévia dos dados
+                const previewLines = csvContent.split('\n').slice(0, 10);
+                let tableHTML = '<table style="width: 100%; border-collapse: collapse;">';
+                
+                previewLines.forEach(line => {
+                    tableHTML += '<tr>';
+                    line.split(',').forEach(cell => {
+                        tableHTML += `<td style="border: 1px solid #ddd; padding: 8px;">${cell}</td>`;
+                    });
+                    tableHTML += '</tr>';
+                });
+                
+                tableHTML += '</table>';
+                previewTable.innerHTML = tableHTML;
+                previewContainer.style.display = 'block';
+                
+                // Processar dados quando o usuário confirmar
+                document.getElementById('processCsvBtn').onclick = async function() {
+                    toggleLoading(true);
+                    try {
+                        await processCSVData(csvContent, unitName, month);
+                        updateMonthSelectors();
+                        updateEmptyStates();
+                        updateDashboard();
+                        alert(`Dados da unidade "${unitName}" processados com sucesso para o mês ${formatMonth(month)}!`);
+                        previewContainer.style.display = 'none';
+                    } catch (error) {
+                        console.error('Erro ao processar CSV:', error);
+                        alert('Erro ao processar CSV. Verifique o console para mais detalhes.');
+                    } finally {
+                        toggleLoading(false);
+                    }
+                };
+            };
+            reader.readAsText(file);
+        }
+
+        // ===============================
+        // CONFIGURAÇÃO DE EVENT LISTENERS
+        // ===============================
+        
+        function setupEventListeners() {
+            // Alternar entre abas
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.tab).classList.add('active');
+                });
+            });
+            
+            // Configurar área administrativa
+            document.getElementById('adminLoginBtn').addEventListener('click', () => {
+                const username = document.getElementById('adminUsername').value;
+                const password = document.getElementById('adminPassword').value;
+                loginAdmin(username, password);
+            });
+            
+            document.getElementById('adminLogoutBtn').addEventListener('click', logoutAdmin);
+            
+            // Upload de CSV
+            document.getElementById('csvUploadArea').addEventListener('click', () => {
+                document.getElementById('csvFileInput').click();
+            });
+            
+            document.getElementById('csvFileInput').addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    const month = document.getElementById('uploadMonth').value;
+                    if (!month) {
+                        alert('Por favor, selecione um mês de referência.');
+                        return;
+                    }
+                    processUploadedCSV(e.target.files[0], month);
+                }
+            });
+            
+            // Botão de atualizar dados
+            document.getElementById('refreshData').addEventListener('click', () => {
+                toggleLoading(true);
+                setTimeout(() => {
+                    updateDashboard();
+                    toggleLoading(false);
+                    alert('Dados atualizados com sucesso!');
+                }, 500);
+            });
+            
+            // Outros event listeners...
+        }
+
+        // ===============================
+        // INICIALIZAÇÃO DO SISTEMA
+        // ===============================
+        
+        // Inicializar o sistema quando a página carregar
+        document.addEventListener('DOMContentLoaded', initDashboard);
+    </script>
+</body>
+</html>
