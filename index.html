@@ -8,10 +8,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
-    <!-- Firebase App (the core Firebase SDK) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <!-- Firebase Firestore -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <!-- Firebase App (versão mais compatível) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -29,24 +28,61 @@
             display: flex;
             align-items: center;
             gap: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
         .firebase-connected {
-            background: var(--success-light);
-            color: var(--success-dark);
-            border: 1px solid var(--success-dark);
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
         }
         
         .firebase-disconnected {
-            background: var(--danger);
-            color: white;
-            border: 1px solid var(--danger-dark);
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
         
         .firebase-syncing {
-            background: var(--warning);
-            color: var(--dark);
-            border: 1px solid var(--warning-dark);
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .firebase-offline {
+            background: #e2e3e5;
+            color: #383d41;
+            border: 1px solid #d6d8db;
+        }
+        
+        .backup-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .backup-card {
+            background: white;
+            border: 1px solid var(--light-gray);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .backup-card h4 {
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+        
+        .backup-features {
+            text-align: left;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        
+        .backup-features li {
+            margin-bottom: 0.5rem;
         }
     </style>
 </head>
@@ -62,7 +98,132 @@
     </div>
 
     <div class="container" id="main-content">
-        <!-- ... (seu HTML existente permanece o mesmo) ... -->
+        <!-- ... (seu HTML existente permanece o mesmo até a seção admin) ... -->
+        
+        <div class="tab-content" id="admin">
+            <div id="adminLogin" class="admin-login">
+                <h2><i class="fas fa-lock"></i> Acesso Administrativo</h2>
+                <div class="form-group">
+                    <label for="adminUsername">Usuário</label>
+                    <input type="text" id="adminUsername" placeholder="Digite seu usuário">
+                </div>
+                <div class="form-group">
+                    <label for="adminPassword">Senha</label>
+                    <input type="password" id="adminPassword" placeholder="Digite sua senha">
+                </div>
+                <button id="adminLoginBtn" class="export-btn" style="width: 100%;">
+                    <i class="fas fa-sign-in-alt"></i> Entrar
+                </button>
+            </div>
+            
+            <div id="adminPanel" class="admin-panel">
+                <div class="admin-logout">
+                    <button id="adminLogoutBtn" class="export-btn danger">
+                        <i class="fas fa-sign-out-alt"></i> Sair
+                    </button>
+                </div>
+                
+                <h2><i class="fas fa-cogs"></i> Painel Administrativo</h2>
+                
+                <div class="admin-tabs">
+                    <div class="admin-tab active" data-admin-tab="upload">Upload de Dados</div>
+                    <div class="admin-tab" data-admin-tab="backup">Backup & Restauração</div>
+                    <div class="admin-tab" data-admin-tab="settings">Configurações</div>
+                </div>
+                
+                <div class="admin-tab-content active" id="adminUpload">
+                    <!-- ... (conteúdo existente de upload) ... -->
+                </div>
+                
+                <div class="admin-tab-content" id="adminBackup">
+                    <h3>Backup e Restauração de Dados</h3>
+                    <p>Faça backup de todos os dados do sistema ou restaure a partir de um backup anterior.</p>
+                    
+                    <div class="backup-options">
+                        <div class="backup-card">
+                            <h4><i class="fas fa-download"></i> Exportar Backup</h4>
+                            <p>Crie uma cópia de segurança completa dos dados</p>
+                            <div class="backup-features">
+                                <li><i class="fas fa-check"></i> Todos os dados das unidades</li>
+                                <li><i class="fas fa-check"></i> Histórico completo</li>
+                                <li><i class="fas fa-check"></i> Metadados do sistema</li>
+                            </div>
+                            <button id="exportBackupBtn" class="export-btn" style="width: 100%;">
+                                <i class="fas fa-download"></i> Exportar Backup Completo
+                            </button>
+                        </div>
+                        
+                        <div class="backup-card">
+                            <h4><i class="fas fa-compress"></i> Backup Compacto</h4>
+                            <p>Versão reduzida para compartilhamento</p>
+                            <div class="backup-features">
+                                <li><i class="fas fa-check"></i> Apenas dados essenciais</li>
+                                <li><i class="fas fa-check"></i> Arquivo menor</li>
+                                <li><i class="fas fa-check"></i> Ideal para transferência</li>
+                            </div>
+                            <button id="exportCompactBackupBtn" class="export-btn warning" style="width: 100%;">
+                                <i class="fas fa-compress"></i> Exportar Backup Compacto
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--light-gray);">
+                        <h4><i class="fas fa-upload"></i> Restaurar Backup</h4>
+                        <p>Selecione um arquivo de backup para restaurar os dados</p>
+                        <div class="controls">
+                            <input type="file" id="backupFileInput" accept=".json" style="display: none;">
+                            <button id="importBackupBtn" class="export-btn" style="margin-right: 1rem;">
+                                <i class="fas fa-upload"></i> Selecionar Arquivo de Backup
+                            </button>
+                            <span id="selectedBackupFile">Nenhum arquivo selecionado</span>
+                        </div>
+                        
+                        <div id="backupPreview" style="display: none; margin-top: 1rem;">
+                            <h5>Prévia do Backup:</h5>
+                            <div id="backupPreviewContent"></div>
+                            <button id="confirmRestoreBtn" class="export-btn warning" style="margin-top: 1rem;">
+                                <i class="fas fa-check"></i> Confirmar Restauração
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--light-gray);">
+                        <h4><i class="fas fa-sync"></i> Sincronização</h4>
+                        <p>Status do Firebase: <span id="firebaseStatusAdmin">Verificando...</span></p>
+                        <button id="syncNowBtn" class="export-btn">
+                            <i class="fas fa-sync"></i> Sincronizar Agora com Firebase
+                        </button>
+                        <button id="forceLocalSaveBtn" class="export-btn warning" style="margin-left: 1rem;">
+                            <i class="fas fa-save"></i> Salvar Localmente
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="admin-tab-content" id="adminSettings">
+                    <h3>Configurações do Sistema</h3>
+                    
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 10px;">
+                            <input type="checkbox" id="autoSaveSetting" checked>
+                            <span>Salvamento automático no Firebase</span>
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 10px;">
+                            <input type="checkbox" id="backupHistorySetting" checked>
+                            <span>Manter histórico de backups</span>
+                        </label>
+                    </div>
+                    
+                    <button id="saveSettingsBtn" class="export-btn">
+                        <i class="fas fa-save"></i> Salvar Configurações
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ... (restante do seu HTML) ... -->
     </div>
 
     <script>
@@ -83,24 +244,31 @@
 
         function initializeFirebase() {
             try {
-                firebase.initializeApp(firebaseConfig);
+                // Verificar se Firebase já foi inicializado
+                if (firebase.apps.length === 0) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                
                 db = firebase.firestore();
                 firebaseInitialized = true;
-                updateFirebaseStatus('connected', 'Conectado ao Firebase');
-                console.log('Firebase inicializado com sucesso');
                 
-                // Configurar listener para mudanças online/offline
-                firebase.firestore().enablePersistence()
-                    .then(() => {
-                        console.log('Persistência ativada');
-                    })
+                // Configurar tratamento de offline
+                db.enablePersistence()
                     .catch((err) => {
-                        console.log('Persistência não suportada:', err);
+                        console.warn('Persistência offline não suportada:', err);
                     });
-                    
+                
+                // Listeners para status de conexão
+                firebase.firestore().onSnapshotsInSync(() => {
+                    updateFirebaseStatus('connected', 'Sincronizado');
+                });
+                
+                updateFirebaseStatus('connected', 'Conectado ao Firebase');
+                console.log('✅ Firebase inicializado com sucesso');
+                
             } catch (error) {
-                console.error('Erro ao inicializar Firebase:', error);
-                updateFirebaseStatus('disconnected', 'Erro no Firebase');
+                console.error('❌ Erro ao inicializar Firebase:', error);
+                updateFirebaseStatus('disconnected', 'Firebase não disponível');
                 firebaseInitialized = false;
             }
         }
@@ -109,17 +277,27 @@
         function updateFirebaseStatus(status, message) {
             const statusElement = document.getElementById('firebaseStatus');
             const statusText = document.getElementById('firebaseStatusText');
+            const adminStatus = document.getElementById('firebaseStatusAdmin');
             
-            statusElement.style.display = 'flex';
-            statusText.textContent = message;
+            if (statusElement && statusText) {
+                statusElement.style.display = 'flex';
+                statusText.textContent = message;
+                
+                statusElement.className = 'firebase-status';
+                if (status === 'connected') {
+                    statusElement.classList.add('firebase-connected');
+                } else if (status === 'disconnected') {
+                    statusElement.classList.add('firebase-disconnected');
+                } else if (status === 'syncing') {
+                    statusElement.classList.add('firebase-syncing');
+                } else if (status === 'offline') {
+                    statusElement.classList.add('firebase-offline');
+                }
+            }
             
-            statusElement.className = 'firebase-status';
-            if (status === 'connected') {
-                statusElement.classList.add('firebase-connected');
-            } else if (status === 'disconnected') {
-                statusElement.classList.add('firebase-disconnected');
-            } else if (status === 'syncing') {
-                statusElement.classList.add('firebase-syncing');
+            if (adminStatus) {
+                adminStatus.textContent = message;
+                adminStatus.style.color = status === 'connected' ? 'green' : 'red';
             }
         }
 
@@ -132,16 +310,17 @@
             isAdmin: false,
             settings: {
                 autoSave: true,
-                backupEnabled: true
-            }
+                backupEnabled: true,
+                backupHistory: true
+            },
+            backupHistory: []
         };
 
         // Salvar dados no Firebase
         async function saveToFirebase() {
             if (!firebaseInitialized || !db) {
                 console.log('Firebase não inicializado, salvando apenas localmente');
-                saveToLocalStorage();
-                return false;
+                return saveToLocalStorage();
             }
 
             try {
@@ -149,17 +328,26 @@
                 
                 const dataToSave = {
                     ...appData,
-                    lastFirebaseSync: new Date().toISOString()
+                    lastFirebaseSync: new Date().toISOString(),
+                    firebaseVersion: '1.0'
                 };
 
                 await db.collection('appData').doc('limpezaDashboard').set(dataToSave);
                 
-                updateFirebaseStatus('connected', 'Dados salvos na nuvem');
-                console.log('Dados salvos no Firebase com sucesso');
+                updateFirebaseStatus('connected', 'Sincronizado ' + new Date().toLocaleTimeString());
+                console.log('✅ Dados salvos no Firebase');
                 return true;
+                
             } catch (error) {
-                console.error('Erro ao salvar no Firebase:', error);
-                updateFirebaseStatus('disconnected', 'Erro ao sincronizar');
+                console.error('❌ Erro ao salvar no Firebase:', error);
+                
+                if (error.code === 'failed-precondition') {
+                    updateFirebaseStatus('disconnected', 'Múltiplas abertas - Use localStorage');
+                } else if (error.code === 'unavailable') {
+                    updateFirebaseStatus('offline', 'Offline - Salvando localmente');
+                } else {
+                    updateFirebaseStatus('disconnected', 'Erro de sincronização');
+                }
                 
                 // Fallback para localStorage
                 saveToLocalStorage();
@@ -177,16 +365,26 @@
             try {
                 updateFirebaseStatus('syncing', 'Carregando da nuvem...');
                 
-                const doc = await db.collection('appData').doc('limpezaDashboard').get();
+                const docRef = db.collection('appData').doc('limpezaDashboard');
+                const doc = await docRef.get();
                 
                 if (doc.exists) {
                     const firebaseData = doc.data();
-                    appData = { ...appData, ...firebaseData };
                     
-                    // Garantir que a estrutura de meses esteja correta
+                    // Migração suave dos dados
+                    appData = {
+                        ...appData, // Mantém estrutura padrão
+                        ...firebaseData, // Sobrescreve com dados do Firebase
+                        lastUpdate: new Date().toISOString()
+                    };
+                    
+                    // Garantir estruturas essenciais
                     if (!appData.meses) appData.meses = {};
+                    if (!appData.unidades) appData.unidades = [];
+                    if (!appData.settings) appData.settings = { autoSave: true, backupEnabled: true };
+                    if (!appData.backupHistory) appData.backupHistory = [];
                     
-                    // Garantir que todas as unidades tenham dados para o mês atual
+                    // Garantir que todas as unidades tenham estrutura correta
                     appData.unidades.forEach(unidade => {
                         if (!unidade.meses) unidade.meses = {};
                         if (!unidade.meses[appData.currentMonth]) {
@@ -199,16 +397,18 @@
                     });
                     
                     updateFirebaseStatus('connected', 'Dados carregados da nuvem');
-                    console.log('Dados carregados do Firebase:', appData);
+                    console.log('✅ Dados carregados do Firebase');
                     return true;
+                    
                 } else {
-                    console.log('Nenhum dado encontrado no Firebase, carregando do localStorage');
+                    console.log('📝 Nenhum dado no Firebase, usando localStorage');
                     updateFirebaseStatus('connected', 'Nenhum dado na nuvem');
                     return loadFromLocalStorage();
                 }
+                
             } catch (error) {
-                console.error('Erro ao carregar do Firebase:', error);
-                updateFirebaseStatus('disconnected', 'Erro ao carregar');
+                console.error('❌ Erro ao carregar do Firebase:', error);
+                updateFirebaseStatus('disconnected', 'Erro ao carregar - Usando backup local');
                 return loadFromLocalStorage();
             }
         }
@@ -216,23 +416,29 @@
         // Salvar dados no localStorage (fallback)
         function saveToLocalStorage() {
             try {
-                appData.lastUpdate = new Date().toISOString();
+                appData.lastLocalSave = new Date().toISOString();
                 localStorage.setItem('limpezaData', JSON.stringify(appData));
-                console.log('Dados salvos localmente');
+                console.log('💾 Dados salvos localmente');
+                return true;
             } catch (e) {
-                console.error('Erro ao salvar dados localmente:', e);
+                console.error('❌ Erro ao salvar dados localmente:', e);
+                return false;
             }
         }
 
         // Carregar dados do localStorage (fallback)
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('limpezaData');
-            if (saved) {
-                try {
+            try {
+                const saved = localStorage.getItem('limpezaData');
+                if (saved) {
                     const parsed = JSON.parse(saved);
                     appData = { ...appData, ...parsed };
                     
+                    // Garantir estruturas
                     if (!appData.meses) appData.meses = {};
+                    if (!appData.unidades) appData.unidades = [];
+                    if (!appData.settings) appData.settings = { autoSave: true, backupEnabled: true };
+                    if (!appData.backupHistory) appData.backupHistory = [];
                     
                     appData.unidades.forEach(unidade => {
                         if (!unidade.meses) unidade.meses = {};
@@ -245,28 +451,30 @@
                         }
                     });
                     
-                    console.log('Dados carregados localmente:', appData);
+                    console.log('✅ Dados carregados do localStorage');
                     return true;
-                } catch (e) {
-                    console.error('Erro ao carregar dados locais:', e);
+                } else {
+                    console.log('📝 Nenhum dado local encontrado, iniciando vazio');
                     return false;
                 }
+            } catch (e) {
+                console.error('❌ Erro ao carregar dados locais:', e);
+                return false;
             }
-            return false;
         }
 
         // Função de salvamento automático
         function autoSave() {
             if (appData.settings.autoSave) {
-                saveToFirebase().then(success => {
-                    if (!success) {
-                        console.log('Salvamento automático falhou, usando localStorage');
-                    }
-                });
+                if (firebaseInitialized) {
+                    saveToFirebase();
+                } else {
+                    saveToLocalStorage();
+                }
             }
         }
 
-        // Exportar backup completo - MELHORADO
+        // Exportar backup completo
         function exportCompleteBackup() {
             try {
                 const backupData = {
@@ -278,111 +486,40 @@
                     firebaseSync: appData.lastFirebaseSync || 'Nunca sincronizado',
                     totalUnits: appData.unidades.length,
                     totalMonths: Object.keys(appData.meses).length,
-                    exportDate: new Date().toISOString()
+                    exportDate: new Date().toISOString(),
+                    dataSize: JSON.stringify(appData).length
                 };
                 
                 const dataStr = JSON.stringify(backupData, null, 2);
-                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
                 
                 const exportFileDefaultName = `backup_completo_limpeza_${new Date().toISOString().slice(0,10)}.json`;
                 
                 const linkElement = document.createElement('a');
-                linkElement.setAttribute('href', dataUri);
-                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.href = url;
+                linkElement.download = exportFileDefaultName;
+                document.body.appendChild(linkElement);
                 linkElement.click();
+                document.body.removeChild(linkElement);
+                URL.revokeObjectURL(url);
                 
-                // Registrar no histórico de backups
+                // Registrar no histórico
                 addBackupToHistory('export', exportFileDefaultName);
                 
-                alert('Backup completo exportado com sucesso!');
+                alert('✅ Backup completo exportado com sucesso!');
                 return true;
+                
             } catch (error) {
-                console.error('Erro ao exportar backup:', error);
-                alert('Erro ao exportar backup: ' + error.message);
+                console.error('❌ Erro ao exportar backup:', error);
+                alert('❌ Erro ao exportar backup: ' + error.message);
                 return false;
             }
         }
 
-        // Importar backup completo - MELHORADO
-        function importCompleteBackup(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const backupData = JSON.parse(e.target.result);
-                    
-                    // Validação do backup
-                    if (!backupData.unidades || !backupData.meses) {
-                        throw new Error('Arquivo de backup inválido - estrutura incorreta');
-                    }
-                    
-                    if (!confirm(`Deseja restaurar este backup?\n\nUnidades: ${backupData.unidades.length}\nMeses: ${Object.keys(backupData.meses).length}\nData: ${backupData.exportDate ? new Date(backupData.exportDate).toLocaleString('pt-BR') : 'Desconhecida'}`)) {
-                        return;
-                    }
-                    
-                    toggleLoading(true);
-                    
-                    setTimeout(() => {
-                        appData = {
-                            ...appData,
-                            unidades: backupData.unidades,
-                            meses: backupData.meses,
-                            lastUpdate: new Date().toISOString()
-                        };
-                        
-                        // Salvar no Firebase e localStorage
-                        saveToFirebase().then(success => {
-                            if (!success) {
-                                saveToLocalStorage();
-                            }
-                            
-                            // Registrar no histórico
-                            addBackupToHistory('import', file.name);
-                            
-                            initDashboard();
-                            alert('Backup importado com sucesso!');
-                            toggleLoading(false);
-                        });
-                    }, 1000);
-                    
-                } catch (error) {
-                    console.error('Erro ao importar backup:', error);
-                    alert('Erro ao importar backup: ' + error.message);
-                }
-            };
-            reader.onerror = function() {
-                alert('Erro ao ler o arquivo de backup');
-            };
-            reader.readAsText(file);
-        }
-
-        // Histórico de backups
-        function addBackupToHistory(type, filename) {
-            if (!appData.backupHistory) {
-                appData.backupHistory = [];
-            }
-            
-            const backupRecord = {
-                type: type, // 'export' ou 'import'
-                filename: filename,
-                date: new Date().toISOString(),
-                dataSize: JSON.stringify(appData).length,
-                unitsCount: appData.unidades.length
-            };
-            
-            appData.backupHistory.unshift(backupRecord);
-            
-            // Manter apenas os últimos 10 registros
-            if (appData.backupHistory.length > 10) {
-                appData.backupHistory = appData.backupHistory.slice(0, 10);
-            }
-            
-            autoSave();
-        }
-
-        // Exportar backup compacto (apenas dados essenciais)
+        // Exportar backup compacto
         function exportCompactBackup() {
             try {
-                // Criar backup apenas com dados essenciais
                 const essentialData = {
                     unidades: appData.unidades.map(unit => ({
                         id: unit.id,
@@ -397,180 +534,170 @@
                     totalUnits: appData.unidades.length
                 };
                 
-                const dataStr = JSON.stringify(essentialData);
-                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                const dataStr = JSON.stringify(essentialData, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
                 
                 const exportFileDefaultName = `backup_compacto_limpeza_${new Date().toISOString().slice(0,10)}.json`;
                 
                 const linkElement = document.createElement('a');
-                linkElement.setAttribute('href', dataUri);
-                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.href = url;
+                linkElement.download = exportFileDefaultName;
+                document.body.appendChild(linkElement);
                 linkElement.click();
+                document.body.removeChild(linkElement);
+                URL.revokeObjectURL(url);
                 
                 addBackupToHistory('export', exportFileDefaultName);
                 
-                alert('Backup compacto exportado com sucesso!');
+                alert('✅ Backup compacto exportado com sucesso!');
                 return true;
+                
             } catch (error) {
-                console.error('Erro ao exportar backup compacto:', error);
-                alert('Erro ao exportar backup compacto: ' + error.message);
+                console.error('❌ Erro ao exportar backup compacto:', error);
+                alert('❌ Erro ao exportar backup compacto: ' + error.message);
                 return false;
             }
         }
 
-        // Processar dados do CSV - ATUALIZADO com auto-save
-        function processCSVData(csvContent, unitName, month) {
-            const lines = csvContent.split('\n');
-            let currentUnit = null;
-            
-            // Encontrar a unidade ou criar uma nova
-            currentUnit = appData.unidades.find(u => u.nome === unitName);
-            if (!currentUnit) {
-                currentUnit = {
-                    id: Date.now(),
-                    nome: unitName,
-                    tipo: unitName.includes("UBS") ? "UBS" : 
-                          unitName.includes("Cais") ? "CAIS" : "DEMAIS",
-                    meses: {}
-                };
-                appData.unidades.push(currentUnit);
-            }
-            
-            // Inicializar dados do mês se necessário
-            if (!currentUnit.meses[month]) {
-                currentUnit.meses[month] = {
-                    produtos: {},
-                    sugestoes: [],
-                    dataImportacao: new Date().toISOString()
-                };
-            }
-            
-            const monthData = currentUnit.meses[month];
-            
-            // Processar linhas do CSV
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i].trim();
-                
-                // Processar linhas de produtos (começam com números)
-                if (/^\d+,/.test(line)) {
-                    const parts = line.split(',').map(part => part.trim().replace(/"/g, ''));
-                    if (parts.length >= 3) {
-                        const productName = parts[1];
-                        const quantityAvailable = parseInt(parts[2]) || 0;
-                        const minSuggested = parseInt(parts[3]) || 0;
-                        
-                        // Determinar status baseado na quantidade disponível vs mínima sugerida
-                        let status = "ok";
-                        if (quantityAvailable === 0) {
-                            status = "danger";
-                        } else if (quantityAvailable < minSuggested) {
-                            status = "warning";
-                        }
-                        
-                        // Adicionar produto à unidade
-                        monthData.produtos[productName] = {
-                            current: quantityAvailable,
-                            min: minSuggested,
-                            status: status
+        // Pré-visualizar backup antes de restaurar
+        function previewBackup(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const backupData = JSON.parse(e.target.result);
+                    
+                    // Validar estrutura básica
+                    if (!backupData.unidades || !backupData.meses) {
+                        throw new Error('Estrutura de backup inválida');
+                    }
+                    
+                    const previewContent = document.getElementById('backupPreviewContent');
+                    previewContent.innerHTML = `
+                        <div style="background: #f8f9fa; padding: 1rem; border-radius: 6px;">
+                            <p><strong>Data do Backup:</strong> ${backupData.exportDate ? new Date(backupData.exportDate).toLocaleString('pt-BR') : 'Desconhecida'}</p>
+                            <p><strong>Unidades:</strong> ${backupData.unidades.length}</p>
+                            <p><strong>Meses:</strong> ${Object.keys(backupData.meses).length}</p>
+                            <p><strong>Versão:</strong> ${backupData.backupVersion || '1.0'}</p>
+                            <p><strong>Tamanho:</strong> ${(file.size / 1024).toFixed(2)} KB</p>
+                        </div>
+                    `;
+                    
+                    document.getElementById('backupPreview').style.display = 'block';
+                    document.getElementById('selectedBackupFile').textContent = file.name;
+                    
+                    // Configurar botão de confirmação
+                    document.getElementById('confirmRestoreBtn').onclick = function() {
+                        importCompleteBackup(file);
+                    };
+                    
+                } catch (error) {
+                    alert('❌ Arquivo de backup inválido: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Importar backup completo
+        function importCompleteBackup(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const backupData = JSON.parse(e.target.result);
+                    
+                    if (!backupData.unidades || !backupData.meses) {
+                        throw new Error('Arquivo de backup inválido - estrutura incorreta');
+                    }
+                    
+                    if (!confirm(`⚠️ DESEJA RESTAURAR ESTE BACKUP?\n\nIsso substituirá todos os dados atuais!\n\nUnidades: ${backupData.unidades.length}\nMeses: ${Object.keys(backupData.meses).length}\nData: ${backupData.exportDate ? new Date(backupData.exportDate).toLocaleString('pt-BR') : 'Desconhecida'}`)) {
+                        return;
+                    }
+                    
+                    toggleLoading(true);
+                    
+                    setTimeout(() => {
+                        appData = {
+                            ...appData,
+                            unidades: backupData.unidades,
+                            meses: backupData.meses,
+                            lastUpdate: new Date().toISOString(),
+                            currentMonth: backupData.currentMonth || appData.currentMonth
                         };
-                    }
-                }
-                
-                // Processar sugestões (coluna "ESPAÇO PARA SUGESTÕES")
-                if (line.includes('ESPAÇO PARA SUGESTÕES') || (i > 0 && line.includes('"'))) {
-                    const parts = line.split(',').map(part => part.trim().replace(/"/g, ''));
-                    if (parts.length > 7 && parts[7]) {
-                        const sugestao = parts[7];
-                        if (sugestao && !sugestao.includes('ESPAÇO PARA SUGESTÕES')) {
-                            // Verificar se a sugestão já existe para evitar duplicatas
-                            const exists = monthData.sugestoes.some(s => s.texto === sugestao);
-                            if (!exists) {
-                                monthData.sugestoes.push({
-                                    id: monthData.sugestoes.length + 1,
-                                    texto: sugestao,
-                                    data: new Date().toISOString(),
-                                    produto: parts[1] ? parts[1] : 'Geral'
-                                });
+                        
+                        // Salvar nos dois locais
+                        saveToFirebase().then(success => {
+                            if (!success) {
+                                saveToLocalStorage();
                             }
-                        }
-                    }
+                            
+                            // Registrar no histórico
+                            addBackupToHistory('import', file.name);
+                            
+                            initDashboard();
+                            alert('✅ Backup importado com sucesso!');
+                            toggleLoading(false);
+                            
+                            // Limpar preview
+                            document.getElementById('backupPreview').style.display = 'none';
+                            document.getElementById('selectedBackupFile').textContent = 'Nenhum arquivo selecionado';
+                        });
+                    }, 1000);
+                    
+                } catch (error) {
+                    console.error('❌ Erro ao importar backup:', error);
+                    alert('❌ Erro ao importar backup: ' + error.message);
                 }
-            }
-            
-            // Salvar automaticamente após processar CSV
-            autoSave();
-            
-            return currentUnit;
+            };
+            reader.onerror = function() {
+                alert('❌ Erro ao ler o arquivo de backup');
+            };
+            reader.readAsText(file);
         }
 
-        // Adicionar nova sugestão - ATUALIZADO com auto-save
-        function addNewSuggestion(suggestionText) {
-            if (!suggestionText.trim()) {
-                alert('Por favor, digite uma sugestão antes de enviar.');
-                return;
-            }
-            
-            // Encontrar a unidade atual (ou criar uma genérica)
-            const currentMonth = document.getElementById('monthFilterSuggestions').value;
-            let currentUnit = appData.unidades[0];
-            
-            if (!currentUnit) {
-                currentUnit = {
-                    id: Date.now(),
-                    nome: 'Sugestão Geral',
-                    tipo: 'DEMAIS',
-                    meses: {}
-                };
-                appData.unidades.push(currentUnit);
-            }
-            
-            if (!currentUnit.meses[currentMonth]) {
-                currentUnit.meses[currentMonth] = {
-                    produtos: {},
-                    sugestoes: [],
-                    dataImportacao: new Date().toISOString()
-                };
-            }
-            
-            currentUnit.meses[currentMonth].sugestoes.push({
-                id: currentUnit.meses[currentMonth].sugestoes.length + 1,
-                texto: suggestionText,
-                data: new Date().toISOString(),
-                produto: 'SUGESTÃO DE PRODUTO NÃO DISPONIBILIZADO E NECESSÁRIO'
-            });
-            
-            // Salvar automaticamente
-            autoSave();
-            
-            updateDashboard();
-            document.getElementById('newSuggestion').value = '';
-            alert('Sugestão enviada com sucesso!');
-        }
-
-        // Remover unidade - ATUALIZADO com auto-save
-        function removeUnit(unitId) {
-            if (confirm('Tem certeza que deseja remover esta unidade? Esta ação não pode ser desfeita.')) {
-                appData.unidades = appData.unidades.filter(u => u.id != unitId);
+        // Histórico de backups
+        function addBackupToHistory(type, filename) {
+            if (appData.settings.backupHistory) {
+                if (!appData.backupHistory) {
+                    appData.backupHistory = [];
+                }
                 
-                // Salvar automaticamente
+                const backupRecord = {
+                    type: type,
+                    filename: filename,
+                    date: new Date().toISOString(),
+                    dataSize: JSON.stringify(appData).length,
+                    unitsCount: appData.unidades.length
+                };
+                
+                appData.backupHistory.unshift(backupRecord);
+                
+                // Manter apenas os últimos 10 registros
+                if (appData.backupHistory.length > 10) {
+                    appData.backupHistory = appData.backupHistory.slice(0, 10);
+                }
+                
                 autoSave();
-                
-                updateEmptyStates();
-                updateDashboard();
-                alert('Unidade removida com sucesso!');
             }
         }
 
-        // Inicializar o dashboard - ATUALIZADO com Firebase
-        function initDashboard() {
+        // Inicializar o dashboard - CORRIGIDO
+        async function initDashboard() {
             toggleLoading(true);
+            console.log('🚀 Iniciando dashboard...');
             
-            // Inicializar Firebase primeiro
-            initializeFirebase();
-            
-            setTimeout(async () => {
+            try {
+                // Inicializar Firebase primeiro
+                initializeFirebase();
+                
+                // Aguardar um pouco para Firebase inicializar
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
                 // Carregar dados (tenta Firebase primeiro, depois localStorage)
-                await loadFromFirebase();
+                const firebaseLoaded = await loadFromFirebase();
+                
+                if (!firebaseLoaded) {
+                    console.log('📝 Usando dados locais');
+                }
                 
                 updateMonthSelectors();
                 setupEventListeners();
@@ -581,23 +708,23 @@
                     updateDashboard();
                 }
                 
-                toggleLoading(false);
+                console.log('✅ Dashboard inicializado com sucesso');
                 
-                // Mostrar status do Firebase
-                setTimeout(() => {
-                    if (firebaseInitialized) {
-                        updateFirebaseStatus('connected', 'Sincronizado com a nuvem');
-                    }
-                }, 2000);
-            }, 1000);
+            } catch (error) {
+                console.error('❌ Erro na inicialização:', error);
+                alert('Erro ao carregar dados. Verifique o console para detalhes.');
+            } finally {
+                toggleLoading(false);
+            }
         }
 
-        // Configurar event listeners - ATUALIZADO com novas funcionalidades
+        // Configurar event listeners - ATUALIZADO
         function setupEventListeners() {
             // ... (seus event listeners existentes) ...
             
             // Novos listeners para backup/restauração
             document.getElementById('exportBackupBtn').addEventListener('click', exportCompleteBackup);
+            document.getElementById('exportCompactBackupBtn').addEventListener('click', exportCompactBackup);
             
             document.getElementById('importBackupBtn').addEventListener('click', () => {
                 document.getElementById('backupFileInput').click();
@@ -605,41 +732,51 @@
             
             document.getElementById('backupFileInput').addEventListener('change', (e) => {
                 if (e.target.files.length > 0) {
-                    importCompleteBackup(e.target.files[0]);
+                    previewBackup(e.target.files[0]);
                 }
             });
             
-            // Botão para backup compacto
-            const compactBackupBtn = document.createElement('button');
-            compactBackupBtn.className = 'export-btn warning';
-            compactBackupBtn.innerHTML = '<i class="fas fa-compress"></i> Backup Compacto';
-            compactBackupBtn.addEventListener('click', exportCompactBackup);
-            
-            // Adicionar botão à seção de backup
-            const backupSection = document.querySelector('#adminBackup .controls');
-            backupSection.appendChild(compactBackupBtn);
-            
             // Sincronização manual
-            const syncBtn = document.createElement('button');
-            syncBtn.className = 'export-btn';
-            syncBtn.innerHTML = '<i class="fas fa-sync"></i> Sincronizar Agora';
-            syncBtn.addEventListener('click', () => {
+            document.getElementById('syncNowBtn').addEventListener('click', () => {
                 toggleLoading(true);
                 saveToFirebase().then(success => {
                     toggleLoading(false);
                     if (success) {
-                        alert('Dados sincronizados com sucesso!');
+                        alert('✅ Dados sincronizados com sucesso!');
                     } else {
-                        alert('Erro na sincronização. Verifique sua conexão.');
+                        alert('⚠️ Dados salvos localmente (sem internet)');
                     }
                 });
             });
             
-            backupSection.appendChild(syncBtn);
+            // Salvamento local forçado
+            document.getElementById('forceLocalSaveBtn').addEventListener('click', () => {
+                if (saveToLocalStorage()) {
+                    alert('✅ Dados salvos localmente com sucesso!');
+                } else {
+                    alert('❌ Erro ao salvar localmente');
+                }
+            });
+            
+            // Configurações
+            document.getElementById('autoSaveSetting').checked = appData.settings.autoSave;
+            document.getElementById('backupHistorySetting').checked = appData.settings.backupHistory;
+            
+            document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+                appData.settings.autoSave = document.getElementById('autoSaveSetting').checked;
+                appData.settings.backupHistory = document.getElementById('backupHistorySetting').checked;
+                autoSave();
+                alert('✅ Configurações salvas!');
+            });
         }
 
-        // Inicializar o dashboard quando a página carregar
-        document.addEventListener('DOMContentLoaded', initDashboard);
+        // Inicializar quando a página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 DOM carregado, iniciando aplicação...');
+            initDashboard();
+        });
+
+        // ... (suas outras funções permanecem as mesmas) ...
     </script>
 </body>
 </html>
